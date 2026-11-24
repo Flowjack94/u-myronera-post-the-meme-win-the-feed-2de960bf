@@ -29,14 +29,19 @@ try {
 }
 
 // Read back what was written and confirm it is a well-formed pointer to the
-// post: valid JSON with a "url" string. A bad pointer is a failed entry, so
-// fail loudly here instead of letting the gate reject it silently.
+// post: valid JSON whose "url" string is an x.com status link. A bad pointer
+// is a failed entry, so fail loudly here instead of letting the gate reject
+// it silently.
 try {
   const parsed: unknown = JSON.parse(readFileSync(destination, 'utf-8'));
   if (typeof parsed !== 'object' || parsed === null || typeof (parsed as { url?: unknown }).url !== 'string') {
     throw new Error('POST.json has no "url" string');
   }
-  console.log(`POST.json copied to ${destination}: ${(parsed as { url: string }).url}`);
+  const url = (parsed as { url: string }).url;
+  if (!url.startsWith('https://x.com/') || !url.includes('/status/')) {
+    throw new Error(`"url" is not an x.com status link: ${url}`);
+  }
+  console.log(`POST.json copied to ${destination}: ${url}`);
 } catch (err) {
   console.error(`Copied POST.json did not verify: ${(err as Error).message}`);
   process.exit(1);
